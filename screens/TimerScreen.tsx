@@ -13,9 +13,17 @@ type TimerScreenProps = {
 
 const TimerScreen = ({ isTimerRunning, setIsTimerRunning }: TimerScreenProps) => {
   const [time, setTime] = useState(0);
+  const [focusStatus, setFocusStatus] = useState<'Focusing' | 'Distracting' | null>(null);
 
   const handlePlayPause = useCallback(() => {
-    setIsTimerRunning(!isTimerRunning);
+    const nextState = !isTimerRunning;
+    setIsTimerRunning(nextState);
+    
+    if (nextState) {
+      setFocusStatus('Focusing'); 
+    } else {
+      setFocusStatus(null); 
+    }
   }, [isTimerRunning, setIsTimerRunning]);
 
   useEffect(() => {
@@ -44,12 +52,18 @@ const TimerScreen = ({ isTimerRunning, setIsTimerRunning }: TimerScreenProps) =>
 
   return (
     <View style={styles.container}>
-      <TaskSelector />
+      <TaskSelector focusStatus={focusStatus} />
 
       <View style={styles.timingSection}>
+        {Platform.OS === 'ios' ? (
+          <BlurView intensity={80} tint="light" style={styles.glassCard}>
+            {renderGlassCardContent()}
+          </BlurView>
+        ) : (
           <GlassView intensity="light" style={styles.glassCard}>
             {renderGlassCardContent()}
           </GlassView>
+        )}
       </View>
     </View>
   );
@@ -61,14 +75,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     alignItems: 'center',
   },
-
   timingSection: {
     flex: 1,
     width: '90%',
-    marginTop: 24,
-    marginBottom: 60,
+    marginTop: 30,
+    marginBottom: 30,
+    justifyContent: 'center', 
   },
-
   glassCard: {
     width: '100%',
     height: '100%',

@@ -1,9 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, StatusBar, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
 import { useFonts } from 'expo-font';
 import {
   Poppins_400Regular,
@@ -14,6 +12,7 @@ import {
   PlayfairDisplay_400Regular,
   PlayfairDisplay_700Bold,
 } from '@expo-google-fonts/playfair-display';
+
 import * as SplashScreen from 'expo-splash-screen';
 
 import TimerScreen from './screens/TimerScreen';
@@ -82,7 +81,6 @@ const App = () => {
           <SafeAreaView edges={['top']} style={styles.safeAreaContainer}>
             {renderScreen()}
             
-            {/* SỬA LỖI Ở ĐÂY: Luôn render CustomTabBar, dùng prop hidden để ẩn nội dung nhưng giữ layout */}
             <CustomTabBar
               activeScreen={activeScreen}
               onTabPress={setActiveScreen}
@@ -99,6 +97,7 @@ const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
   },
+  
   safeAreaContainer: {
     flex: 1,
     backgroundColor: 'transparent',
