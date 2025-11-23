@@ -20,9 +20,9 @@ const TimerScreen = ({ isTimerRunning, setIsTimerRunning }: TimerScreenProps) =>
     setIsTimerRunning(nextState);
     
     if (nextState) {
-      setFocusStatus('Focusing'); 
+      setFocusStatus('Focusing'); // Khi bắt đầu, đặt trạng thái là Focusing
     } else {
-      setFocusStatus(null); 
+      setFocusStatus(null); // Khi dừng, reset trạng thái
     }
   }, [isTimerRunning, setIsTimerRunning]);
 
@@ -32,6 +32,7 @@ const TimerScreen = ({ isTimerRunning, setIsTimerRunning }: TimerScreenProps) =>
     if (isTimerRunning) {
       interval = setInterval(() => {
         setTime((prevTime) => prevTime + 1);
+        // Sau này, logic BCI sẽ cập nhật setFocusStatus ở đây
       }, 1000);
     } else if (!isTimerRunning && interval) {
       clearInterval(interval);
@@ -52,6 +53,7 @@ const TimerScreen = ({ isTimerRunning, setIsTimerRunning }: TimerScreenProps) =>
 
   return (
     <View style={styles.container}>
+      {/* Truyền focusStatus vào TaskSelector */}
       <TaskSelector focusStatus={focusStatus} />
 
       <View style={styles.timingSection}>
