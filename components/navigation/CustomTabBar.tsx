@@ -11,6 +11,7 @@ import IconProfile from '../icons/IconProfile';
 type CustomTabBarProps = {
   activeScreen: ScreenName;
   onTabPress: (screen: ScreenName) => void;
+  hidden?: boolean;
 };
 
 type TabButtonProps = {
@@ -35,44 +36,19 @@ const TabButton = ({ label, isActive, onPress }: TabButtonProps) => {
   } else if (label === 'Profile') {
     iconWidth = 25; 
   }
-  // ------------------------------------
 
   const renderIcon = () => {
     if (label === 'Timer') {
-      return (
-        <IconTimer
-          focused={isActive}
-          color={color}
-          size={iconDefaultSize}
-        />
-      );
+      return <IconTimer focused={isActive} color={color} size={iconDefaultSize} />;
     }
     if (label === 'Garden') {
-      return (
-        <IconGarden
-          focused={isActive}
-          color={color}
-          size={iconDefaultSize}
-        />
-      );
+      return <IconGarden focused={isActive} color={color} size={iconDefaultSize} />;
     }
     if (label === 'Report') {
-      return (
-        <IconReport
-          focused={isActive}
-          color={color}
-          size={iconDefaultSize}
-        />
-      );
+      return <IconReport focused={isActive} color={color} size={iconDefaultSize} />;
     }
     if (label === 'Profile') {
-      return (
-        <IconProfile
-          focused={isActive}
-          color={color}
-          size={iconDefaultSize}
-        />
-      );
+      return <IconProfile focused={isActive} color={color} size={iconDefaultSize} />;
     }
     return null;
   };
@@ -90,7 +66,11 @@ const TabButton = ({ label, isActive, onPress }: TabButtonProps) => {
   );
 };
 
-const CustomTabBar = ({ activeScreen, onTabPress }: CustomTabBarProps) => {
+const CustomTabBar = ({ activeScreen, onTabPress, hidden }: CustomTabBarProps) => {
+  if (hidden) {
+    return <View style={[styles.background, { backgroundColor: 'transparent' }]} />;
+  }
+
   return (
     <View style={styles.background}>
       <View style={styles.iconContainer}>
@@ -121,8 +101,7 @@ const CustomTabBar = ({ activeScreen, onTabPress }: CustomTabBarProps) => {
 
 const styles = StyleSheet.create({
   background: {
-    width: '100%',
-    height: 85,
+    height: 85, 
     backgroundColor: COLORS.whitecolor_01,
     justifyContent: 'center',
     alignItems: 'center',
@@ -133,14 +112,12 @@ const styles = StyleSheet.create({
     height: 56,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
   },
 
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center', 
-    height: '100%', 
   },
 
   tabLabel: {

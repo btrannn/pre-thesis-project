@@ -22,6 +22,14 @@ export const FONTS = {
     fontWeight: '400' as '400',
     letterSpacing: 0,
   },
+  
+  poppins_70_regular: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 70,
+    fontStyle: 'normal' as 'normal',
+    fontWeight: '400' as '400',
+    letterSpacing: 0,
+  },
 
   poppins_14_medium: {
     fontFamily: 'Poppins_500Medium',
@@ -53,8 +61,8 @@ export const FONTS = {
     letterSpacing: 0.1,
   },
 
-  playfair_70_light: {
-    fontFamily: 'Playfair Display', 
+  playfair_70_regular: {
+    fontFamily: 'Playfair Display_400Regular', 
     fontSize: 70, 
     fontStyle: 'normal' as 'normal',
     fontWeight: '300' as '300',

@@ -28,7 +28,7 @@ const CircularTimer = ({ time, isRunning, onToggle }: CircularTimerProps) => {
   const CY = SIZE / 2;
 
   const PlayPauseIcon = isRunning ? (
-    <IconPause color={COLORS.solidgreen_05} size={30} />
+    <IconPause size={30} />
   ) : (
     <IconPlay />
   );
@@ -97,39 +97,41 @@ const CircularTimer = ({ time, isRunning, onToggle }: CircularTimerProps) => {
 const styles = StyleSheet.create({
   timerCircleContainer: {
     width: 280,
-    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 60,
+    marginBottom: 120,
   },
+
   maskedView: {
     width: '100%',
     height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
+  
   maskedElementContainer: {
     flex: 1,
-    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   timerText: {
-    ...FONTS.playfair_70_light,
+    ...FONTS.playfair_70_regular,
   },
+
   gradientFill: {
     flex: 1,
     width: '100%',
     height: '100%',
   },
+  
   playButtonContainer: {
     position: 'absolute',
-    bottom: '15%',
+    bottom: '10%',
     width: 75,
     height: 75,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   playButtonGlass: {
     position: 'absolute',
     width: '100%',
@@ -139,6 +141,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
+  
   playIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',

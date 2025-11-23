@@ -9,7 +9,7 @@ const TaskSelector = () => {
     <TouchableOpacity style={styles.container}>
       <View style={styles.content}>
         <LinearGradient
-          colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+          colors={['rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0.2)']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={styles.glass}
@@ -30,13 +30,15 @@ const styles = StyleSheet.create({
   container: {
     width: '90%',
     height: 55,
-    marginTop: 150,
+    marginTop: 100,
   },
+
   content: {
     width: '100%',
     height: 53,
     position: 'absolute',
   },
+
   glass: {
     top: 0,
     left: 0,
@@ -48,6 +50,7 @@ const styles = StyleSheet.create({
     height: 53,
     position: 'absolute',
   },
+
   text: {
     top: 15,
     left: 0,
@@ -59,11 +62,13 @@ const styles = StyleSheet.create({
     height: 51,
     position: 'absolute',
   },
+
   icon: {
     top: 16,
     right: 20,
     position: 'absolute',
   },
+
 });
 
 export default TaskSelector;
