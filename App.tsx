@@ -4,7 +4,7 @@ import TimerScreen from './screens/TimerScreen';
 import GardenScreen from './screens/GardenScreen';
 import ReportScreen from './screens/ReportScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import CustomTabBar from './components/CustomTabBar';
+import CustomTabBar from './components/navigation/CustomTabBar';
 import Background from './components/Background'; 
 
 export type ScreenName = 'Timer' | 'Garden' | 'Report' | 'Profile';
@@ -28,7 +28,7 @@ const App = () => {
   };
 
   return (
-    <Background> {/* <-- BỌC TOÀN BỘ NỘI DUNG VÀO ĐÂY */}
+    <Background> 
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         {renderScreen()}
@@ -41,7 +41,7 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent', // Nền của SafeAreaView trong suốt
+    backgroundColor: 'transparent',
   },
 });
 

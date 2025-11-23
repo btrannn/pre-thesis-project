@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  Svg,
-  Path,
-  G,
-  Mask,
-  Defs,
-  LinearGradient,
-  Stop,
-  Rect,
-} from 'react-native-svg';
+import { Svg, Path, LinearGradient, Stop, Defs, G, Mask } from 'react-native-svg';
 
 type IconReportProps = {
   focused?: boolean;
@@ -27,7 +18,7 @@ const IconReportFocused = ({
   <Svg
     width={width}
     height={height}
-    viewBox="4 10 26 24" // <-- ĐÃ SỬA DÒNG NÀY
+    viewBox="4 10 26 24" 
     fill="none"
   >
     <Path
@@ -204,9 +195,8 @@ const IconReportInactive = ({
 // --- Component chính ---
 const IconReport = ({ focused, color, size }: IconReportProps) => {
   // viewBox="0 0 41 45"
-  // --- LOGIC MỚI THEO YÊU CẦU ---
-  const iconHeight = size || 24; // Vẫn lấy size (height) từ prop
-  const iconWidth = 26; // Đặt cứng chiều rộng là 26
+  const iconHeight = size || 24; 
+  const iconWidth = 26;
 
   if (focused) {
     return <IconReportFocused width={iconWidth} height={iconHeight} />;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Svg, Path, G, ClipPath, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { Svg, Path, LinearGradient, Stop, Defs } from 'react-native-svg';
 
 type IconGardenProps = {
   focused?: boolean;

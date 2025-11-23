@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ScreenName } from '../App';
-import { COLORS, FONTS } from '../styles/theme';
+import { ScreenName } from '../../App';
+import { COLORS, FONTS } from '../../styles/theme';
 
-import IconTimer from './IconTimer';
-import IconGarden from './IconGarden';
-import IconReport from './IconReport';
-import IconProfile from './IconProfile';
+import IconTimer from '../icons/IconTimer';
+import IconGarden from '../icons/IconGarden';
+import IconReport from '../icons/IconReport';
+import IconProfile from '../icons/IconProfile';
 
 type CustomTabBarProps = {
   activeScreen: ScreenName;

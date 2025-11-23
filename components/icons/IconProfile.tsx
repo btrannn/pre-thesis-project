@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  Svg,
-  Path,
-  G,
-  Mask,
-  Defs,
-  LinearGradient,
-  Stop,
-  Rect,
-} from 'react-native-svg';
+import { Svg, Path, LinearGradient, Stop, Defs, G, Mask, Rect } from 'react-native-svg';
 
 type IconProfileProps = {
   focused?: boolean;
@@ -214,15 +205,8 @@ const IconProfileInactive = ({
 
 // --- Component chính ---
 const IconProfile = ({ focused, color, size }: IconProfileProps) => {
-  // viewBox="0 0 36 44"
-  // const iconSize = size || 24; // Bỏ logic cũ
-  // const iconWidth = (iconSize / 44) * 36; // Bỏ logic cũ
-  // const iconHeight = iconSize; // Bỏ logic cũ
-
-  // --- LOGIC MỚI THEO YÊU CẦU ---
-  const iconHeight = size || 24; // Vẫn lấy size (height) từ prop
-  const iconWidth = 25; // Đặt cứng chiều rộng là 25
-
+  const iconHeight = size || 24; 
+  const iconWidth = 25;
   if (focused) {
     return <IconProfileFocused width={iconWidth} height={iconHeight} />;
   }
