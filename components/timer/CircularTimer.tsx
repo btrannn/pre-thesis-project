@@ -6,11 +6,16 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import IconPlay from '../icons/IconPlay';
 import IconPause from '../icons/IconPause';
+import IconStop from '../icons/IconStop';
+
+type TimerMode = 'Working' | 'Breaking';
 
 type CircularTimerProps = {
   time: number;
   isRunning: boolean;
+  mode?: TimerMode;
   onToggle: () => void;
+  onSkip?: () => void; 
 };
 
 const formatTime = (totalSeconds: number) => {
@@ -20,7 +25,7 @@ const formatTime = (totalSeconds: number) => {
   return `${pad(minutes)}:${pad(seconds)}`;
 };
 
-const CircularTimer = ({ time, isRunning, onToggle }: CircularTimerProps) => {
+const CircularTimer = ({ time, isRunning, mode, onToggle, onSkip }: CircularTimerProps) => {
   const STROKE_WIDTH = 6;
   const SIZE = 280;
   const RADIUS = SIZE / 2 - STROKE_WIDTH / 2;
@@ -28,7 +33,7 @@ const CircularTimer = ({ time, isRunning, onToggle }: CircularTimerProps) => {
   const CY = SIZE / 2;
 
   const PlayPauseIcon = isRunning ? (
-    <IconPause size={30} />
+    <IconPause size={30}/>
   ) : (
     <IconPlay />
   );
@@ -62,7 +67,6 @@ const CircularTimer = ({ time, isRunning, onToggle }: CircularTimerProps) => {
           />
         </Svg>
 
-        {/* Gradient Text */}
         <MaskedView
           style={styles.maskedView}
           maskElement={
@@ -85,11 +89,32 @@ const CircularTimer = ({ time, isRunning, onToggle }: CircularTimerProps) => {
         </MaskedView>
       </View>
 
-      {/* Play/Pause Button */}
-      <TouchableOpacity style={styles.playButtonContainer} onPress={onToggle}>
-        <View style={styles.playButtonGlass} />
-        <View style={styles.playIconContainer}>{PlayPauseIcon}</View>
-      </TouchableOpacity>
+      {/* Button */}
+      <View style={styles.controlsWrapper}>
+        {mode === 'Breaking' ? (
+          <View style={styles.breakRow}>
+            {/* Play/Pause */}
+            <TouchableOpacity style={styles.buttonContainer} onPress={onToggle}>
+              <View style={styles.buttonGlass} />
+              <View style={styles.iconContainer}>{PlayPauseIcon}</View>
+            </TouchableOpacity>
+            
+            {/* Stop */}
+            <TouchableOpacity style={styles.buttonContainer} onPress={onSkip}>
+              <View style={styles.buttonGlass} />
+              <View style={styles.iconContainer}>
+                <IconStop size={21}/>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // Default (Working): Just Play/Pause
+          <TouchableOpacity style={styles.buttonContainer} onPress={onToggle}>
+            <View style={styles.buttonGlass} />
+            <View style={styles.iconContainer}>{PlayPauseIcon}</View>
+          </TouchableOpacity>
+        )}
+      </View>
     </>
   );
 };
@@ -101,38 +126,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 120,
   },
-
   maskedView: {
     width: '100%',
     height: '100%',
   },
-  
   maskedElementContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   timerText: {
     ...FONTS.playfair_70_regular,
   },
-
   gradientFill: {
     flex: 1,
     width: '100%',
     height: '100%',
   },
   
-  playButtonContainer: {
+  // --- BUTTONS STYLES ---
+  controlsWrapper: {
     position: 'absolute',
     bottom: '10%',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  breakRow: {
+    flexDirection: 'row',
+    gap: 40,
+    alignItems: 'center',
+  },
+  buttonContainer: {
     width: 75,
     height: 75,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  playButtonGlass: {
+  buttonGlass: {
     position: 'absolute',
     width: '100%',
     height: '100%',
@@ -141,11 +172,9 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
-  
-  playIconContainer: {
+  iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
   },
 });
 
