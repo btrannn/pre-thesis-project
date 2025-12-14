@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS } from '../../styles/theme';
 
 type TaskSelectorProps = {
-  // 1. Thêm 'Break Time' vào đây để không bị lỗi đỏ
   focusStatus?: 'Focusing' | 'Distracting' | 'Break Time' | null;
   onPress?: () => void;
 };

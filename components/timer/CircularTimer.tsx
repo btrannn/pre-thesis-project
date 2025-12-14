@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, FONTS } from '../../styles/theme';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+
+import { COLORS, FONTS } from '../../styles/theme';
+
 import IconPlay from '../icons/IconPlay';
 import IconPause from '../icons/IconPause';
 import IconStop from '../icons/IconStop';

@@ -9,16 +9,12 @@ import GlassView from '../components/design/GlassView';
 type FocusStatusType = 'Focusing' | 'Distracting' | 'Break Time' | null;
 type TimerMode = 'Working' | 'Breaking';
 
-const MIN_BREAK_SECONDS = 5 * 60; 
-const BREAK_RATIO = 1 / 3;
+const BREAK_RATIO = 1 / 5;
 
 const calculateBreakTime = (focusSeconds: number): number => {
-  const focusMinutes = Math.floor(focusSeconds / 60);
-  if (focusMinutes <= 25) {
-    return MIN_BREAK_SECONDS;
-  }
+  // const focusMinutes = Math.floor(focusSeconds / 60);
   const calculatedBreakTime = Math.round(focusSeconds * BREAK_RATIO);
-  return Math.max(calculatedBreakTime, MIN_BREAK_SECONDS);
+  return calculatedBreakTime;
 };
 
 type TimerScreenProps = {
@@ -143,6 +139,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     alignItems: 'center',
   },
+
   timingSection: {
     flex: 1,
     width: '90%',
@@ -150,6 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     justifyContent: 'center', 
   },
+
   glassCard: {
     width: '100%',
     height: '100%',
