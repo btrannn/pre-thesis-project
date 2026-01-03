@@ -30,7 +30,7 @@ const GlassView = ({ style, intensity = 'medium', children }: GlassViewProps) =>
 
 const styles = StyleSheet.create({
   glass: {
-    overflow: 'hidden', 
+    // overflow: 'hidden', // Removed to allow ScrollView
   },
 });
 

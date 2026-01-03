@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 import TaskSelector from '../components/timer/TaskSelector';
 import CircularTimer from '../components/timer/CircularTimer';
+import FocusStatusDisplay from '../components/timer/FocusStatusDisplay';
 import GlassView from '../components/design/GlassView';
 
 type FocusStatusType = 'Focusing' | 'Distracting' | 'Break Time' | null;
 type TimerMode = 'Working' | 'Breaking';
 
 const BREAK_RATIO = 1 / 5;
+
+import focusScores from '../datasets/focus_scores.json';
 
 const calculateBreakTime = (focusSeconds: number): number => {
   // const focusMinutes = Math.floor(focusSeconds / 60);
@@ -36,6 +39,25 @@ const TimerScreen = ({
   const [time, setTime] = useState(0);
   const [focusTime, setFocusTime] = useState(0);
   const [mode, setMode] = useState<TimerMode>('Working');
+  const [scoreIndex, setScoreIndex] = useState(0);
+
+  useEffect(() => {
+    if (isTimerRunning && mode === 'Working') {
+      const interval = setInterval(() => {
+        setScoreIndex(prev => (prev + 1) % focusScores.length);
+      }, 500); // Update every 0.5 seconds
+      return () => clearInterval(interval);
+    } else if (mode === 'Breaking') {
+      setFocusStatus('Break Time');
+    }
+  }, [isTimerRunning, mode, setFocusStatus]);
+
+  useEffect(() => {
+    if (isTimerRunning && mode === 'Working') {
+      const score = focusScores[scoreIndex];
+      setFocusStatus(score > 0.5 ? 'Focusing' : 'Distracting');
+    }
+  }, [scoreIndex, isTimerRunning, mode, setFocusStatus]);
 
   const handleStop = useCallback(() => {
     setTime(0);
@@ -48,9 +70,8 @@ const TimerScreen = ({
   const handleBreakEnd = useCallback(() => {
     setMode('Working'); 
     setTime(focusTime + 1); 
-    setFocusStatus('Focusing');
     setIsTimerRunning(true); 
-  }, [focusTime, setFocusStatus, setIsTimerRunning]);
+  }, [focusTime, setIsTimerRunning]);
 
   const handlePlayPause = useCallback(() => {
     if (!isTimerRunning && mode === 'Breaking') {
@@ -62,16 +83,13 @@ const TimerScreen = ({
     setIsTimerRunning(nextState);
     
     if (nextState) {
-      if (mode === 'Working') {
-         setFocusStatus('Focusing'); 
-      }
+      // Timer started
     } else {
       if (mode === 'Working') {
         const breakDuration = calculateBreakTime(time);
         setFocusTime(time);
         setTime(breakDuration);
         setMode('Breaking');
-        setFocusStatus('Break Time');
       }
     }
   }, [isTimerRunning, setIsTimerRunning, setFocusStatus, time, mode]);
@@ -116,7 +134,11 @@ const TimerScreen = ({
 
   return (
     <View style={styles.container}>
-      <TaskSelector focusStatus={focusStatus} onPress={handlePlayPause} />
+      {isTimerRunning ? (
+        <FocusStatusDisplay focusStatus={focusStatus} isTimerRunning={isTimerRunning} />
+      ) : (
+        <TaskSelector disabled={!isTimerRunning && time > 0} />
+      )}
 
       <View style={styles.timingSection}>
         {Platform.OS === 'ios' ? (

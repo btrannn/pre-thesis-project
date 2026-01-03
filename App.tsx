@@ -17,6 +17,7 @@ import TimerScreen from './screens/TimerScreen';
 import GardenScreen from './screens/GardenScreen';
 import ReportScreen from './screens/ReportScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import TestScreen from './screens/TestScreen';
 
 import CustomTabBar from './components/navigation/CustomTabBar';
 import Background from './components/Background';
@@ -30,6 +31,7 @@ const App = () => {
   const [activeScreen, setActiveScreen] = useState<ScreenName>('Timer');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [focusStatus, setFocusStatus] = useState<FocusStatusType>(null);
+  const [isCalibrated, setIsCalibrated] = useState(false);
 
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -87,6 +89,23 @@ const App = () => {
         );
     }
   };
+
+  if (!isCalibrated) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.rootContainer} onLayout={onLayoutRootView}>
+          <StatusBar
+            barStyle="dark-content"
+            backgroundColor="transparent"
+            translucent
+          />
+          <SafeAreaView edges={['top']} style={styles.safeAreaContainer}>
+            <TestScreen onComplete={() => setIsCalibrated(true)} />
+          </SafeAreaView>
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <Background>
