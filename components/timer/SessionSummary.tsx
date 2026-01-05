@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import CircularProgress from './CircularProgress';
 import SessionStats from './SessionStats';
@@ -28,56 +28,94 @@ const SessionSummary = ({
 }: SessionSummaryProps) => {
   // --- SMART DEMO MODE ---
   // Nếu tổng thời gian session < 1 phút (do chạy test/demo), 
-  // tự động giả lập dữ liệu của một phiên làm việc chuẩn (45 phút) để UI đẹp.
+  // tự động giả lập dữ liệu của một phiên làm việc chuẩn để UI đẹp.
   const realTotalSeconds = focusTime + breakTime;
   const isDemo = realTotalSeconds < 60;
 
-  // Dữ liệu hiển thị (dùng mock nếu là demo, dùng thật nếu chạy đủ lâu)
-  const displayFocusTime = isDemo ? 2700 : focusTime; // 45 phút
-  const displayBreakTime = isDemo ? 900 : breakTime;  // 15 phút
-  const displayTotalSeconds = displayFocusTime + displayBreakTime;
-  
-  const displayStartTime = isDemo ? "08:00" : startTime;
-  const displayEndTime = isDemo ? "09:00" : endTime;
+  // --- LOGIC XỬ LÝ DỮ LIỆU & ĐỒNG BỘ UI ---
+  const { 
+    displayFocusTime, 
+    displayBreakTime, 
+    displayStartTime, 
+    displayEndTime, 
+    timelineData 
+  } = useMemo(() => {
+    if (isDemo) {
+      // === DEMO MODE ===
+      // 1. Chuẩn bị dữ liệu cho Timeline từ file JSON
+      const targetPoints = 60;
+      const step = Math.max(1, Math.floor(demoScores.length / targetPoints));
+      const scores = [];
+      let focusCount = 0; // Đếm số lượng mẫu đạt chuẩn tập trung
 
-  // Tính toán các chỉ số
+      for (let i = 0; i < targetPoints; i++) {
+         const index = (i * step) % demoScores.length;
+         const score = Number(demoScores[index]);
+         
+         scores.push({
+           timestamp: i * 30,
+           score: score
+         });
+
+         // Đếm số điểm đạt ngưỡng tập trung (> 0.5) để tính stats
+         if (score > 0.5) {
+           focusCount++;
+         }
+      }
+
+      // 2. Tính toán thời gian dựa trên TỶ LỆ THỰC TẾ của dữ liệu
+      // Giả sử tổng phiên demo là 45 phút (2700s)
+      const totalDemoSeconds = 2700;
+      
+      // Tính tỷ lệ tập trung thực tế từ dữ liệu mẫu
+      const focusRatio = focusCount / targetPoints;
+
+      // Phân bổ thời gian theo đúng tỷ lệ này để đồng bộ với biểu đồ
+      const calculatedFocusTime = Math.round(totalDemoSeconds * focusRatio);
+      const calculatedBreakTime = Math.round(totalDemoSeconds * (1 - focusRatio));
+
+      return {
+        displayFocusTime: calculatedFocusTime,
+        displayBreakTime: calculatedBreakTime, // Ở demo mode, break time đại diện cho thời gian mất tập trung
+        displayStartTime: "08:00",
+        displayEndTime: "08:45",
+        timelineData: scores
+      };
+    } else {
+      // === REAL MODE ===
+      const intervalSize = 30;
+      const realScores = [];
+      for (let i = 0; i < focusScores.length; i++) {
+        realScores.push({
+          timestamp: i * intervalSize,
+          score: focusScores[i],
+        });
+      }
+
+      return {
+        displayFocusTime: focusTime,
+        displayBreakTime: breakTime,
+        displayStartTime: startTime,
+        displayEndTime: endTime,
+        timelineData: realScores
+      };
+    }
+  }, [isDemo, focusScores, focusTime, breakTime, startTime, endTime]);
+
+  const displayTotalSeconds = displayFocusTime + displayBreakTime;
+
+  // Tính toán các chỉ số hiển thị cho Stats và Circle
   const totalMinutes = Math.round(displayTotalSeconds / 60);
   const focusMinutes = Math.round(displayFocusTime / 60);
   const breakMinutes = Math.round(displayBreakTime / 60);
-  const focusPercentage = displayTotalSeconds > 0 ? (displayFocusTime / displayTotalSeconds) * 100 : 0;
+  
+  // % hiển thị trên vòng tròn
+  const sessionPercentage = displayTotalSeconds > 0 ? (displayFocusTime / displayTotalSeconds) * 100 : 0;
 
-  // Xử lý dữ liệu cho timeline
-  const intervalSize = 30;
-  let timelineData: { timestamp: number; score: number }[] = [];
-
-  if (isDemo) {
-    // SỬ DỤNG DỮ LIỆU TỪ FILE focus_scores.json
-    // Lấy khoảng 60 điểm dữ liệu từ file để hiển thị lên biểu đồ
-    const targetPoints = 60;
-    
-    // Tính bước nhảy để lấy mẫu đều khắp file (tránh lấy cục bộ 1 chỗ)
-    // Nếu file ít hơn 60 điểm thì step = 1
-    const step = Math.max(1, Math.floor(demoScores.length / targetPoints));
-
-    for (let i = 0; i < targetPoints; i++) {
-       // Lấy giá trị từ file, dùng modulo để tránh lỗi index nếu file ngắn
-       const index = (i * step) % demoScores.length;
-       const score = Number(demoScores[index]); // Đảm bảo là số
-       
-       timelineData.push({
-         timestamp: i * 30,
-         score: score
-       });
-    }
-  } else {
-    // DỮ LIỆU THẬT (Khi chạy thực tế)
-    for (let i = 0; i < focusScores.length; i++) {
-      timelineData.push({
-        timestamp: i * intervalSize,
-        score: focusScores[i],
-      });
-    }
-  }
+  // Tính điểm trung bình để hiển thị (chỉ dùng cho UI badge nếu cần)
+  const averageFocus = timelineData.length > 0
+    ? (timelineData.reduce((sum, item) => sum + item.score, 0) / timelineData.length) * 100
+    : 0;
 
   return (
     <View style={styles.container}>
@@ -95,12 +133,19 @@ const SessionSummary = ({
             </View>
           </View>
 
-          {/* Main Circle */}
-          <View style={styles.progressWrapper}>
-            <CircularProgress focusPercentage={focusPercentage} totalMinutes={totalMinutes} />
-            <View style={styles.timeBadge}>
-              <Ionicons name="time-outline" size={14} color="#2e7d32" />
-              <Text style={styles.timeText}>{displayStartTime} - {displayEndTime}</Text>
+          {/* Main Circle & Stats Area */}
+          <View style={styles.progressContainer}>
+            {/* Circle Wrapper: Chứa vòng tròn */}
+            <View style={styles.circleWrapper}>
+              <CircularProgress focusPercentage={sessionPercentage} totalMinutes={totalMinutes} />
+              {/* Center Stats removed */}
+            </View>
+
+            <View style={styles.timeBadgeContainer}>
+              <View style={styles.timeBadge}>
+                <Ionicons name="time-outline" size={14} color="#2e7d32" />
+                <Text style={styles.timeText}>{displayStartTime} - {displayEndTime}</Text>
+              </View>
             </View>
           </View>
 
@@ -109,7 +154,6 @@ const SessionSummary = ({
 
           {/* Timeline */}
           <View style={styles.timelineWrapper}>
-             {/* Truyền timelineData đã xử lý xuống biểu đồ */}
              <FocusTimeline data={timelineData} startTime={displayStartTime} endTime={displayEndTime} />
           </View>
 
@@ -145,7 +189,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
   },
   headerTitle: {
     fontSize: 12,
@@ -169,19 +213,32 @@ const styles = StyleSheet.create({
     color: '#333',
     marginLeft: 6,
   },
-  progressWrapper: {
+  
+  // Updated Styles for Progress Section
+  progressContainer: {
     alignItems: 'center',
-    marginBottom: 32,
-    position: 'relative',
+    marginBottom: 24,
+    width: '100%',
+    // Loại bỏ position relative ở đây để tránh conflict
+  },
+  circleWrapper: {
+    position: 'relative', // Quan trọng để con absolute căn theo nó
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 200, // Đặt kích thước cố định hoặc bằng kích thước CircularProgress
+    height: 200,
+    marginBottom: 16, // Khoảng cách với Time Badge bên dưới
+  },
+  timeBadgeContainer: {
+    alignItems: 'center',
+    marginTop: 0, // Đã có margin từ circleWrapper
   },
   timeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'absolute',
-    bottom: -12,
     backgroundColor: '#fff',
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -193,8 +250,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#2e7d32',
-    marginLeft: 4,
+    marginLeft: 6,
   },
+  
   timelineWrapper: {
     width: '100%',
     marginTop: 20,
