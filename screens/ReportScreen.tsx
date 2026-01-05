@@ -54,7 +54,7 @@ function ReportScreen() {
     for (let i = 0; i < item.focusScores.length; i++) {
       timelineData.push({
         timestamp: i * 30,
-        isFocus: item.focusScores[i] > 0.5,
+        score: item.focusScores[i], // Fix: sử dụng 'score' thay vì 'isFocus' để khớp với FocusTimeline mới
       });
     }
 

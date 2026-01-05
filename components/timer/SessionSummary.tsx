@@ -1,17 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import CircularProgress from './CircularProgress';
 import SessionStats from './SessionStats';
 import FocusTimeline from './FocusTimeline';
+import GlassView from '../design/GlassView';
+import { Ionicons } from '@expo/vector-icons';
 
 type SessionSummaryProps = {
   taskName: string;
-  focusTime: number; // in seconds
-  breakTime: number; // in seconds
+  focusTime: number;
+  breakTime: number;
   focusScores: number[];
-  startTime: string; // HH:MM format
-  endTime: string;   // HH:MM format
+  startTime: string;
+  endTime: string;
   onDone: () => void;
 };
 
@@ -30,85 +31,154 @@ const SessionSummary = ({
   const breakMinutes = Math.round(breakTime / 60);
   const focusPercentage = totalSeconds > 0 ? (focusTime / totalSeconds) * 100 : 0;
 
-  // Create focus data for timeline (every 30 seconds = 1 bar)
-  const intervalSize = 30; // seconds
-  const timelineData = [];
+  // Cập nhật: Truyền giá trị score thực tế để vẽ biểu đồ chi tiết hơn
+  const intervalSize = 30;
+  // Thêm định nghĩa kiểu dữ liệu rõ ràng để tránh lỗi TypeScript
+  const timelineData: { timestamp: number; score: number }[] = [];
+  
   for (let i = 0; i < focusScores.length; i++) {
     timelineData.push({
       timestamp: i * intervalSize,
-      isFocus: focusScores[i] > 0.5,
+      score: focusScores[i], // Truyền raw score (0.0 - 1.0)
     });
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.taskName}>[Session 3] {taskName}</Text>
-        </View>
-        <Ionicons name="chevron-down" size={20} color="#999" />
-      </View>
+    <View style={styles.container}>
+      <GlassView intensity="light" style={styles.glassCard}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>SESSION REPORT</Text>
+            <View style={styles.taskContainer}>
+              <Ionicons name="pricetag-outline" size={16} color="#444" style={{marginRight: 6}} />
+              <Text style={styles.taskName}>{taskName}</Text>
+            </View>
+          </View>
 
-      <View style={styles.progressSection}>
-        <CircularProgress focusPercentage={focusPercentage} totalMinutes={totalMinutes} />
-      </View>
+          {/* Main Circle */}
+          <View style={styles.progressWrapper}>
+            <CircularProgress focusPercentage={focusPercentage} totalMinutes={totalMinutes} />
+            <View style={styles.timeBadge}>
+              <Ionicons name="time-outline" size={14} color="#2e7d32" />
+              <Text style={styles.timeText}>{startTime} - {endTime}</Text>
+            </View>
+          </View>
 
-      <View style={styles.statsSection}>
-        <SessionStats focusMinutes={focusMinutes} relaxMinutes={breakMinutes} />
-      </View>
+          {/* Stats Grid */}
+          <SessionStats focusMinutes={focusMinutes} relaxMinutes={breakMinutes} />
 
-      <FocusTimeline data={timelineData} startTime={startTime} endTime={endTime} />
+          {/* Timeline - Giờ đây sẽ nhận dữ liệu chứa score */}
+          <View style={styles.timelineWrapper}>
+             <FocusTimeline data={timelineData} startTime={startTime} endTime={endTime} />
+          </View>
 
-      <TouchableOpacity style={styles.button} onPress={onDone}>
-        <Text style={styles.buttonText}>Done</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          {/* Done Button */}
+          <TouchableOpacity style={styles.button} onPress={onDone}>
+            <Text style={styles.buttonText}>Complete Session</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </GlassView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
+    width: '92%',
+    alignSelf: 'center',
+    marginVertical: 40,
+  },
+  glassCard: {
+    flex: 1,
+    borderRadius: 32,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 40,
+    alignItems: 'center',
   },
   header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#666',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  taskContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  headerContent: {
-    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   taskName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2d3436',
   },
-  progressSection: {
+  progressWrapper: {
     alignItems: 'center',
-    marginVertical: 24,
+    marginBottom: 32,
+    position: 'relative',
   },
-  statsSection: {
-    marginBottom: 12,
+  timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: -10,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  timeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2e7d32',
+    marginLeft: 4,
+  },
+  timelineWrapper: {
+    width: '100%',
+    marginTop: 20,
   },
   button: {
+    width: '100%',
     backgroundColor: '#2e7d32',
-    marginHorizontal: 0,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 24,
     alignItems: 'center',
-    marginTop: 28,
-    marginBottom: 40,
+    marginTop: 32,
+    shadowColor: "#2e7d32",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 

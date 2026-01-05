@@ -13,20 +13,33 @@ const SessionStats = ({ focusMinutes, relaxMinutes }: SessionStatsProps) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
-        <View style={styles.statItem}>
-          <View style={[styles.indicator, styles.focusIndicator]} />
-          <Text style={styles.label}>Focus</Text>
-          <Text style={styles.percentage}>{focusPercentage}%</Text>
-          <Text style={styles.minutes}>{focusMinutes} minutes</Text>
+      {/* Focus Column */}
+      <View style={styles.column}>
+        <View style={styles.labelGroup}>
+            <View style={[styles.dot, styles.focusDot]} />
+            <Text style={styles.label}>Focus Time</Text>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.statItem}>
-          <View style={[styles.indicator, styles.relaxIndicator]} />
-          <Text style={styles.label}>Relax</Text>
-          <Text style={styles.percentage}>{relaxPercentage}%</Text>
-          <Text style={styles.minutes}>{relaxMinutes} minutes</Text>
+        <View style={styles.valueGroup}>
+            <Text style={styles.number}>{focusMinutes}</Text>
+            <Text style={styles.unit}>min</Text>
         </View>
+        <Text style={styles.percentage}>{focusPercentage}% of session</Text>
+      </View>
+
+      {/* Vertical Divider */}
+      <View style={styles.divider} />
+
+      {/* Relax Column */}
+      <View style={styles.column}>
+        <View style={styles.labelGroup}>
+            <View style={[styles.dot, styles.relaxDot]} />
+            <Text style={styles.label}>Break Time</Text>
+        </View>
+        <View style={styles.valueGroup}>
+            <Text style={styles.number}>{relaxMinutes}</Text>
+            <Text style={styles.unit}>min</Text>
+        </View>
+        <Text style={styles.percentage}>{relaxPercentage}% of session</Text>
       </View>
     </View>
   );
@@ -34,56 +47,65 @@ const SessionStats = ({ focusMinutes, relaxMinutes }: SessionStatsProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.2)',
-    marginHorizontal: 0,
-  },
-  row: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    marginBottom: 10,
   },
-  statItem: {
+  column: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   divider: {
     width: 1,
-    height: 60,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 16,
+    height: '60%',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    alignSelf: 'center',
   },
-  indicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  labelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  focusIndicator: {
-    backgroundColor: '#2e7d32',
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
   },
-  relaxIndicator: {
-    backgroundColor: '#81C784',
-  },
+  focusDot: { backgroundColor: '#2e7d32' },
+  relaxDot: { backgroundColor: '#81C784' },
+  
   label: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 6,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  valueGroup: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 4,
+  },
+  number: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#2d3436',
+    marginRight: 2,
+  },
+  unit: {
+    fontSize: 14,
     fontWeight: '500',
+    color: '#888',
   },
   percentage: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2e7d32',
-  },
-  minutes: {
     fontSize: 11,
     color: '#999',
-    marginTop: 2,
+    fontWeight: '500',
   },
 });
 
