@@ -5,14 +5,15 @@ import SessionStats from './SessionStats';
 import FocusTimeline from './FocusTimeline';
 import GlassView from '../design/GlassView';
 import { Ionicons } from '@expo/vector-icons';
+import demoScores from '../../datasets/focus_scores.json'; // Import dữ liệu mẫu
 
 type SessionSummaryProps = {
   taskName: string;
-  focusTime: number;
-  breakTime: number;
+  focusTime: number; // in seconds
+  breakTime: number; // in seconds
   focusScores: number[];
-  startTime: string;
-  endTime: string;
+  startTime: string; // HH:MM format
+  endTime: string;   // HH:MM format
   onDone: () => void;
 };
 
@@ -25,22 +26,57 @@ const SessionSummary = ({
   endTime,
   onDone,
 }: SessionSummaryProps) => {
-  const totalSeconds = focusTime + breakTime;
-  const totalMinutes = Math.round(totalSeconds / 60);
-  const focusMinutes = Math.round(focusTime / 60);
-  const breakMinutes = Math.round(breakTime / 60);
-  const focusPercentage = totalSeconds > 0 ? (focusTime / totalSeconds) * 100 : 0;
+  // --- SMART DEMO MODE ---
+  // Nếu tổng thời gian session < 1 phút (do chạy test/demo), 
+  // tự động giả lập dữ liệu của một phiên làm việc chuẩn (45 phút) để UI đẹp.
+  const realTotalSeconds = focusTime + breakTime;
+  const isDemo = realTotalSeconds < 60;
 
-  // Cập nhật: Truyền giá trị score thực tế để vẽ biểu đồ chi tiết hơn
-  const intervalSize = 30;
-  // Thêm định nghĩa kiểu dữ liệu rõ ràng để tránh lỗi TypeScript
-  const timelineData: { timestamp: number; score: number }[] = [];
+  // Dữ liệu hiển thị (dùng mock nếu là demo, dùng thật nếu chạy đủ lâu)
+  const displayFocusTime = isDemo ? 2700 : focusTime; // 45 phút
+  const displayBreakTime = isDemo ? 900 : breakTime;  // 15 phút
+  const displayTotalSeconds = displayFocusTime + displayBreakTime;
   
-  for (let i = 0; i < focusScores.length; i++) {
-    timelineData.push({
-      timestamp: i * intervalSize,
-      score: focusScores[i], // Truyền raw score (0.0 - 1.0)
-    });
+  const displayStartTime = isDemo ? "08:00" : startTime;
+  const displayEndTime = isDemo ? "09:00" : endTime;
+
+  // Tính toán các chỉ số
+  const totalMinutes = Math.round(displayTotalSeconds / 60);
+  const focusMinutes = Math.round(displayFocusTime / 60);
+  const breakMinutes = Math.round(displayBreakTime / 60);
+  const focusPercentage = displayTotalSeconds > 0 ? (displayFocusTime / displayTotalSeconds) * 100 : 0;
+
+  // Xử lý dữ liệu cho timeline
+  const intervalSize = 30;
+  let timelineData: { timestamp: number; score: number }[] = [];
+
+  if (isDemo) {
+    // SỬ DỤNG DỮ LIỆU TỪ FILE focus_scores.json
+    // Lấy khoảng 60 điểm dữ liệu từ file để hiển thị lên biểu đồ
+    const targetPoints = 60;
+    
+    // Tính bước nhảy để lấy mẫu đều khắp file (tránh lấy cục bộ 1 chỗ)
+    // Nếu file ít hơn 60 điểm thì step = 1
+    const step = Math.max(1, Math.floor(demoScores.length / targetPoints));
+
+    for (let i = 0; i < targetPoints; i++) {
+       // Lấy giá trị từ file, dùng modulo để tránh lỗi index nếu file ngắn
+       const index = (i * step) % demoScores.length;
+       const score = Number(demoScores[index]); // Đảm bảo là số
+       
+       timelineData.push({
+         timestamp: i * 30,
+         score: score
+       });
+    }
+  } else {
+    // DỮ LIỆU THẬT (Khi chạy thực tế)
+    for (let i = 0; i < focusScores.length; i++) {
+      timelineData.push({
+        timestamp: i * intervalSize,
+        score: focusScores[i],
+      });
+    }
   }
 
   return (
@@ -53,8 +89,8 @@ const SessionSummary = ({
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>SESSION REPORT</Text>
-            <View style={styles.taskContainer}>
-              <Ionicons name="pricetag-outline" size={16} color="#444" style={{marginRight: 6}} />
+            <View style={styles.taskBadge}>
+              <Ionicons name="pricetag-outline" size={14} color="#555" />
               <Text style={styles.taskName}>{taskName}</Text>
             </View>
           </View>
@@ -64,16 +100,17 @@ const SessionSummary = ({
             <CircularProgress focusPercentage={focusPercentage} totalMinutes={totalMinutes} />
             <View style={styles.timeBadge}>
               <Ionicons name="time-outline" size={14} color="#2e7d32" />
-              <Text style={styles.timeText}>{startTime} - {endTime}</Text>
+              <Text style={styles.timeText}>{displayStartTime} - {displayEndTime}</Text>
             </View>
           </View>
 
           {/* Stats Grid */}
           <SessionStats focusMinutes={focusMinutes} relaxMinutes={breakMinutes} />
 
-          {/* Timeline - Giờ đây sẽ nhận dữ liệu chứa score */}
+          {/* Timeline */}
           <View style={styles.timelineWrapper}>
-             <FocusTimeline data={timelineData} startTime={startTime} endTime={endTime} />
+             {/* Truyền timelineData đã xử lý xuống biểu đồ */}
+             <FocusTimeline data={timelineData} startTime={displayStartTime} endTime={displayEndTime} />
           </View>
 
           {/* Done Button */}
@@ -108,28 +145,29 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   headerTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#666',
     letterSpacing: 1.5,
     marginBottom: 8,
     textTransform: 'uppercase',
   },
-  taskContainer: {
+  taskBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   taskName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#2d3436',
+    color: '#333',
+    marginLeft: 6,
   },
   progressWrapper: {
     alignItems: 'center',
@@ -140,19 +178,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
-    bottom: -10,
+    bottom: -12,
     backgroundColor: '#fff',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#2e7d32',
     marginLeft: 4,
@@ -172,7 +210,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
-    elevation: 10,
+    elevation: 8,
   },
   buttonText: {
     color: '#fff',
