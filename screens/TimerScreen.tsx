@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import TaskSelector from '../components/timer/TaskSelector';
 import CircularTimer from '../components/timer/CircularTimer';
 import FocusStatusDisplay from '../components/timer/FocusStatusDisplay';
+import SessionSummary from '../components/timer/SessionSummary';
 import GlassView from '../components/design/GlassView';
 
 type FocusStatusType = 'Focusing' | 'Distracting' | 'Break Time' | null;
@@ -40,6 +41,11 @@ const TimerScreen = ({
   const [focusTime, setFocusTime] = useState(0);
   const [mode, setMode] = useState<TimerMode>('Working');
   const [scoreIndex, setScoreIndex] = useState(0);
+  const [showSummary, setShowSummary] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<string>('00:00');
+  const [sessionEndTime, setSessionEndTime] = useState<string>('00:00');
+  const [sessionScores, setSessionScores] = useState<number[]>([]);
+  const [selectedTask, setSelectedTask] = useState<string | null>(null);
 
   useEffect(() => {
     if (isTimerRunning && mode === 'Working') {
@@ -60,9 +66,20 @@ const TimerScreen = ({
   }, [scoreIndex, isTimerRunning, mode, setFocusStatus]);
 
   const handleStop = useCallback(() => {
+    const hours = String(Math.floor(time / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((time % 3600) / 60)).padStart(2, '0');
+    setSessionEndTime(`${hours}:${minutes}`);
+    setSessionScores(focusScores.slice(0, scoreIndex));
+    setShowSummary(true);
+  }, [time, scoreIndex]);
+
+  const handleSessionDone = useCallback(() => {
     setTime(0);
     setFocusTime(0);
     setMode('Working');
+    setShowSummary(false);
+    setSessionScores([]);
+    setSelectedTask(null);
     
     onFinishSession();
   }, [onFinishSession]);
@@ -134,23 +151,37 @@ const TimerScreen = ({
 
   return (
     <View style={styles.container}>
-      {isTimerRunning ? (
-        <FocusStatusDisplay focusStatus={focusStatus} isTimerRunning={isTimerRunning} />
+      {showSummary ? (
+        <SessionSummary
+          taskName={selectedTask || 'Session'}
+          focusTime={focusTime}
+          breakTime={time - focusTime}
+          focusScores={sessionScores}
+          startTime={sessionStartTime}
+          endTime={sessionEndTime}
+          onDone={handleSessionDone}
+        />
       ) : (
-        <TaskSelector disabled={!isTimerRunning && time > 0} />
-      )}
+        <>
+          {isTimerRunning ? (
+            <FocusStatusDisplay focusStatus={focusStatus} isTimerRunning={isTimerRunning} />
+          ) : (
+            <TaskSelector disabled={!isTimerRunning && time > 0} />
+          )}
 
-      <View style={styles.timingSection}>
-        {Platform.OS === 'ios' ? (
-          <BlurView intensity={80} tint="light" style={styles.glassCard}>
-            {renderGlassCardContent()}
-          </BlurView>
-        ) : (
-          <GlassView intensity="light" style={styles.glassCard}>
-            {renderGlassCardContent()}
-          </GlassView>
-        )}
-      </View>
+          <View style={styles.timingSection}>
+            {Platform.OS === 'ios' ? (
+              <BlurView intensity={80} tint="light" style={styles.glassCard}>
+                {renderGlassCardContent()}
+              </BlurView>
+            ) : (
+              <GlassView intensity="light" style={styles.glassCard}>
+                {renderGlassCardContent()}
+              </GlassView>
+            )}
+          </View>
+        </>
+      )}
     </View>
   );
 };
