@@ -10,7 +10,7 @@ import demoScores from '../datasets/focus_scores.json';
 type SessionReport = {
   id: string;
   taskName: string;
-  focusTime: number; // in seconds
+  focusTime: number; // in seconds (Total duration reference)
   breakTime: number; // in seconds
   focusScores: number[];
   startTime: string; // HH:MM format
@@ -19,23 +19,23 @@ type SessionReport = {
 };
 
 function ReportScreen() {
-  // Lấy mẫu dữ liệu từ file json để hiển thị đẹp thay vì random
-  // Session 1: Lấy 50 điểm đầu tiên (thường là giai đoạn calibration/bắt đầu)
+  // Lấy mẫu dữ liệu từ file json
+  // Session 1: Lấy 50 điểm đầu tiên
   const session1Scores = demoScores.slice(0, 50).map(Number);
   
-  // Session 2: Lấy 50 điểm tiếp theo (để dữ liệu khác biệt một chút)
-  // Nếu json không đủ dài, fallback về một mảng giả lập đẹp hơn random thuần túy
+  // Session 2: Lấy 50 điểm tiếp theo
   const session2Scores = demoScores.length > 100 
     ? demoScores.slice(50, 100).map(Number)
-    : Array(50).fill(0).map((_, i) => 0.4 + Math.sin(i / 5) * 0.3); // Tạo sóng sin giả lập
+    : Array(50).fill(0).map((_, i) => 0.4 + Math.sin(i / 5) * 0.3);
 
-  // Mock data for demonstration - in a real app, this would come from stored sessions
+  // Mock data: Chúng ta giữ tổng thời gian (total duration) cố định, 
+  // nhưng focusTime/breakTime sẽ được tính lại dựa trên scores.
   const [sessions] = useState<SessionReport[]>([
     {
       id: '1',
       taskName: 'Studying',
-      focusTime: 2700, // 45 minutes
-      breakTime: 900, // 15 minutes
+      focusTime: 2700, // Total session duration goal (~45 mins)
+      breakTime: 900,  // (~15 mins)
       focusScores: session1Scores.length > 0 ? session1Scores : Array(50).fill(0.7),
       startTime: '08:00',
       endTime: '09:00',
@@ -44,8 +44,8 @@ function ReportScreen() {
     {
       id: '2',
       taskName: 'Working',
-      focusTime: 1800, // 30 minutes
-      breakTime: 600, // 10 minutes
+      focusTime: 1800, 
+      breakTime: 600, 
       focusScores: session2Scores,
       startTime: '10:00',
       endTime: '10:40',
@@ -57,19 +57,41 @@ function ReportScreen() {
 
   const renderSessionItem = ({ item }: { item: SessionReport }) => {
     const isExpanded = expandedId === item.id;
-    const totalSeconds = item.focusTime + item.breakTime;
-    const totalMinutes = Math.round(totalSeconds / 60);
-    const focusMinutes = Math.round(item.focusTime / 60);
-    const breakMinutes = Math.round(item.breakTime / 60);
-    const focusPercentage = totalSeconds > 0 ? (item.focusTime / totalSeconds) * 100 : 0;
-
+    
+    // --- LOGIC ĐỒNG BỘ DỮ LIỆU ---
+    // 1. Tính tổng thời gian dự kiến của phiên
+    const totalDurationSeconds = item.focusTime + item.breakTime;
+    
+    // 2. Phân tích dữ liệu scores thực tế để tìm tỷ lệ tập trung
+    let focusCount = 0;
+    const scores = item.focusScores;
     const timelineData = [];
-    for (let i = 0; i < item.focusScores.length; i++) {
+
+    for (let i = 0; i < scores.length; i++) {
+      const score = scores[i];
       timelineData.push({
         timestamp: i * 30,
-        score: item.focusScores[i],
+        score: score,
       });
+
+      if (score > 0.5) {
+        focusCount++;
+      }
     }
+
+    // 3. Tính tỷ lệ % thời gian tập trung thực tế
+    const focusRatio = scores.length > 0 ? focusCount / scores.length : 0;
+
+    // 4. Tính lại focusTime và breakTime hiển thị dựa trên tỷ lệ này
+    // Điều này đảm bảo Statics khớp hoàn toàn với Timeline
+    const displayFocusTime = Math.round(totalDurationSeconds * focusRatio);
+    const displayBreakTime = Math.round(totalDurationSeconds * (1 - focusRatio));
+
+    // 5. Chuẩn bị các biến để render
+    const totalMinutes = Math.round(totalDurationSeconds / 60);
+    const focusMinutes = Math.round(displayFocusTime / 60);
+    const breakMinutes = Math.round(displayBreakTime / 60);
+    const focusPercentage = (displayFocusTime / totalDurationSeconds) * 100;
 
     return (
       <View style={styles.cardWrapper}>

@@ -1,160 +1,93 @@
-import csv
-import json
+import pandas as pd
 import numpy as np
-from scipy.signal import welch, butter, lfilter
-import os
+import json
+from scipy.signal import welch
 
-INPUT_FILE = os.path.join('datasets', 'emotiv_data_raw.csv')
-OUTPUT_FILE = os.path.join('datasets', 'focus_scores.json')
-FOCUS_CALIBRATION_FILE = os.path.join('datasets', 'focus_calibration.csv')
-DISTRACTED_CALIBRATION_FILE = os.path.join('datasets', 'distracted_calibration.csv')
-SAMPLING_RATE = 128
-WINDOW_SIZE = 128 * 2
-STEP_SIZE = 128 // 2
-
-AF3_INDEX = 3
-AF4_INDEX = 16
-
-BANDS = {
-    'Alpha': (8, 12),
-    'Beta': (13, 30),
-}
-
-def get_band_power(signal, band, fs):
-    
-    freqs, psd = welch(
-        signal, 
-        fs=fs, 
-        nperseg=WINDOW_SIZE, 
-        average='mean', 
-        detrend=False
-    )
-    
-    idx_band = np.logical_and(freqs >= band[0], freqs <= band[1])
-    
-    band_power = np.sum(psd[idx_band])
-    return band_power
-
-def bandpass_filter(signal, lowcut, highcut, fs, order=4):
-    nyq = 0.5 * fs
-    low = lowcut / nyq
-    high = highcut / nyq
-    b, a = butter(order, [low, high], btype='band')
-    return lfilter(b, a, signal)
-
-def compute_calibration_thresholds(focus_file, distracted_file, fs):
-    def get_ratios_from_file(file_path):
-        raw_data = []
-        if not os.path.exists(file_path):
-            print(f"Warning: Calibration file not found: {file_path}")
-            return []
-        with open(file_path, 'r') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                try:
-                    if len(row) > 16:
-                        eeg_values = [float(row[i]) for i in range(3, 17)]
-                        raw_data.append(eeg_values)
-                except ValueError:
-                    continue
-        if not raw_data:
-            return []
-        raw_data = np.array(raw_data)
-        af3_raw = raw_data[:, AF3_INDEX - 3]
-        af4_raw = raw_data[:, AF4_INDEX - 3]
-        af3_filtered = af3_raw - 4200
-        af4_filtered = af4_raw - 4200
-        af3_filtered = bandpass_filter(af3_filtered, 1, 50, fs)
-        af4_filtered = bandpass_filter(af4_filtered, 1, 50, fs)
-        ratios = []
-        num_samples = len(af3_filtered)
-        for i in range(0, num_samples - WINDOW_SIZE, STEP_SIZE):
-            window_af3 = af3_filtered[i:i + WINDOW_SIZE]
-            window_af4 = af4_filtered[i:i + WINDOW_SIZE]
-            signal_window = (window_af3 + window_af4) / 2
-            alpha_power = get_band_power(signal_window, BANDS['Alpha'], fs)
-            beta_power = get_band_power(signal_window, BANDS['Beta'], fs)
-            if alpha_power > 0:
-                ratios.append(beta_power / alpha_power)
-        return ratios
-    
-    focus_ratios = get_ratios_from_file(focus_file)
-    distracted_ratios = get_ratios_from_file(distracted_file)
-    
-    if not focus_ratios or not distracted_ratios:
-        print("Warning: Insufficient calibration data, using default thresholds.")
-        return 0.5, 3.0
-    
-    # For simulation, use fixed thresholds to get varied scores
-    min_focus = 0.5
-    max_focus = 3.0
-    print(f"Using fixed calibration thresholds. Min: {min_focus}, Max: {max_focus}")
-    return min_focus, max_focus
-
-def process_eeg_data(input_file, output_file, fs, min_focus, max_focus):
-    raw_data = []
-    
-    if not os.path.exists(input_file):
-        print(f"FATAL ERROR: Input file not found at path: {input_file}")
+def process_eeg_data(input_file, output_file):
+    try:
+        df = pd.read_csv(input_file)
+    except FileNotFoundError:
+        print(f"Lỗi: Không tìm thấy file {input_file}")
         return
 
-    with open(input_file, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            try:
-                if len(row) > 16:
-                    eeg_values = [float(row[i]) for i in range(3, 17)]
-                    raw_data.append(eeg_values)
-            except ValueError:
-                continue
+    fs = 128 
+    theta_band = (4, 8)
+    beta_band = (13, 30)
 
-    if not raw_data:
-        print("Error: No valid EEG data found after reading.")
-        return
+    window_size = int(fs * 1.0)  
+    step_size = int(fs * 0.25) 
 
-    raw_data = np.array(raw_data)
-    
-    af3_raw = raw_data[:, AF3_INDEX - 3] 
-    af4_raw = raw_data[:, AF4_INDEX - 3] 
-
-    DC_OFFSET = 4200 
-    af3_filtered = af3_raw - DC_OFFSET
-    af4_filtered = af4_raw - DC_OFFSET
-
-    af3_filtered = bandpass_filter(af3_filtered, 1, 50, fs)
-    af4_filtered = bandpass_filter(af4_filtered, 1, 50, fs)
-    
     focus_scores = []
+
+    channels = ['AF3', 'AF4'] 
     
-    num_samples = len(af3_filtered)
-    
-    for i in range(0, num_samples - WINDOW_SIZE, STEP_SIZE):
-        window_af3 = af3_filtered[i:i + WINDOW_SIZE]
-        window_af4 = af4_filtered[i:i + WINDOW_SIZE]
+    available_channels = [ch for ch in channels if ch in df.columns]
+    if not available_channels:
+        available_channels = df.select_dtypes(include=[np.number]).columns[:2]
+
+    print(f"Đang xử lý các kênh: {available_channels}...")
+
+    for start in range(0, len(df) - window_size, step_size):
+        end = start + window_size
+        window_data = df.iloc[start:end][available_channels]
         
-        signal_window = (window_af3 + window_af4) / 2
-        
-        alpha_power = get_band_power(signal_window, BANDS['Alpha'], fs)
-        beta_power = get_band_power(signal_window, BANDS['Beta'], fs)
-        
-        if alpha_power > 0:
-            focus_index = beta_power / alpha_power
-        else:
-            focus_index = 0.0
+        epoch_ratios = []
+
+        for channel in available_channels:
+            signal = window_data[channel].values
             
-        normalized_score = np.clip(
-            (focus_index - min_focus) / (max_focus - min_focus), 
-            0, 
-            1
-        )
+            freqs, psd = welch(signal, fs, nperseg=window_size)
+            
+            theta_idx = np.logical_and(freqs >= theta_band[0], freqs <= theta_band[1])
+            theta_power = np.mean(psd[theta_idx]) if np.any(theta_idx) else 1e-10
+            
+            beta_idx = np.logical_and(freqs >= beta_band[0], freqs <= beta_band[1])
+            beta_power = np.mean(psd[beta_idx]) if np.any(beta_idx) else 1e-10
+            
+            if theta_power > 0:
+                ratio = beta_power / theta_power
+                epoch_ratios.append(ratio)
         
-        focus_scores.append(float(normalized_score))
+        if epoch_ratios:
+            avg_ratio = np.mean(epoch_ratios)
+            focus_scores.append(avg_ratio)
 
-    with open(output_file, 'w') as f:
-        json.dump(focus_scores, f)
+    if focus_scores:
+        scores_np = np.array(focus_scores)
+        
+        scores_np = np.log1p(scores_np)
 
-    print(f"Processing complete. Saved {len(focus_scores)} focus scores to file: {output_file}")
-    print("These scores represent the Normalized Focus Level per 0.5s interval.")
+        lower_bound = np.percentile(scores_np, 5)
+        upper_bound = np.percentile(scores_np, 95)
+        scores_np = np.clip(scores_np, lower_bound, upper_bound)
+        
+        min_val = scores_np.min()
+        max_val = scores_np.max()
+        
+        if max_val - min_val > 0:
+            normalized_scores = (scores_np - min_val) / (max_val - min_val)
+        else:
+            normalized_scores = np.zeros_like(scores_np)
+            
+        window_smooth = 5
+        weights = np.exp(np.linspace(-1., 0., window_smooth))
+        weights /= weights.sum()
+        smooth_scores = np.convolve(normalized_scores, weights, mode='same')
+        
+        noise = np.random.normal(0, 0.02, len(smooth_scores)) 
+        final_scores = smooth_scores + noise
+        
+        final_scores = np.clip(final_scores, 0.01, 0.99)
+        
+        final_list = final_scores.tolist()
+        
+        with open(output_file, 'w') as f:
+            json.dump(final_list, f)
+    else:
+        print("Không đủ dữ liệu để xử lý.")
 
-min_focus, max_focus = compute_calibration_thresholds(FOCUS_CALIBRATION_FILE, DISTRACTED_CALIBRATION_FILE, SAMPLING_RATE)
-process_eeg_data(INPUT_FILE, OUTPUT_FILE, SAMPLING_RATE, min_focus, max_focus)
+if __name__ == "__main__":
+    raw_data_path = 'emotiv_data_raw.csv' 
+    output_json_path = 'focus_scores.json'
+    
+    process_eeg_data(raw_data_path, output_json_path)
